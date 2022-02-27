@@ -3,11 +3,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
-import javafx.util.Pair;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -24,7 +22,6 @@ public class WordCount {
         private final static ObjectWritable outputPair = new ObjectWritable();
         private final Text word = new Text();
 
-
         public void map(Object key, Text value, Context context
         ) throws IOException, InterruptedException {
             StringTokenizer itr = new StringTokenizer(value.toString());
@@ -35,13 +32,10 @@ public class WordCount {
                     map.replace(w,map.get(w)+1);
                 else
                     map.put(w,1);
-
-                //word.set(itr.nextToken());
-                //context.write(word, one);
             }
             String[] parts = value.toString().split("\n");
             for(String k:map.keySet()){
-                Pair<String, Integer> pair = new Pair<>(parts[0],map.get(k));
+                Pair pair = new Pair(parts[0],(double) map.get(k));
                 word.set(k);
                 outputPair.set(pair);
                 context.write(word, outputPair);
@@ -61,9 +55,9 @@ public class WordCount {
             ArrayList<Pair> invertedIdx = new ArrayList<>();
             for (ObjectWritable val : values) {
                  Pair p= (Pair)(val.get());
-                 Integer tf=(Integer)(p.getValue());
+                 Double tf=p.value;
                  double idf = IterableUtils.size(values)/N;
-                 Pair<String, Double> pair = new Pair<>((String)p.getKey(),tf*idf);
+                 Pair pair = new Pair(p.key,tf*idf);
                  invertedIdx.add(pair);
             }
             result.set(invertedIdx);
@@ -83,5 +77,14 @@ public class WordCount {
         FileInputFormat.addInputPath(job, new Path("./lucenedemo/"));
         FileOutputFormat.setOutputPath(job, new Path("./output3/"));
         System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}
+
+class Pair{
+    public String key;
+    public Double value;
+    public Pair(String title, Double tf){
+        key=title;
+        value= tf;
     }
 }
